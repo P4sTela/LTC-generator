@@ -15,7 +15,7 @@ from datetime import datetime
 import struct
 
 class LTCGenerator:
-    def __init__(self, fps=60, sample_rate=48000, use_drop_frame=None, user_bits=None, user_bits_field1=0):
+    def __init__(self, fps=60, sample_rate=48000, use_drop_frame=None, user_bits=None, user_bits_field=[0,0,0,0,0,0,0,0]):
         """
         LTCジェネレーターの初期化
         
@@ -27,97 +27,22 @@ class LTCGenerator:
             サンプルレート（デフォルト: 48000Hz）
         use_drop_frame : bool or None
             ドロップフレームフラグ（Noneの場合、29.97と59.94fpsでは自動的にTrue）
-        user_bits : dict or None
-            ユーザービットデータ。以下のキーをサポート：
-            - 'groups': リスト[int, int, int, int] - 4つのユーザーグループ（各8ビット）
-            - 'binary_groups': リスト[int] - 8つのバイナリグループフラグ
-            - 'date': str - 日付（'YYYY-MM-DD'形式）
-            - 'timezone': str - タイムゾーン（'UTC+9'など）
-            - 'reel_number': int - リール番号（0-99）
-            - 'camera_id': str - カメラID（最大4文字）
+        user_bits_field : list
+            ユーザービットフィールド（デフォルト: [0,0,0,0,0,0,0,0]）
         """
         self.fps = fps
         self.sample_rate = sample_rate
         self.bits_per_frame = 80  # LTCの1フレームあたりのビット数
         
-        # ユーザービットの初期化
-        self.user_bits = {
-            'groups': [0, 0, 0, 0],  # 4つのユーザーグループ（各8ビット）
-            'binary_groups': [0] * 8,  # 8つのバイナリグループフラグ
-            'date': None,
-            'timezone': None,
-            'reel_number': None,
-            'camera_id': None
-        }
-        
-        self.user_bits_field1 = 0
-        self.user_bits_field2 = 0
-        self.user_bits_field3 = 0
-        self.user_bits_field4 = 0
-        self.user_bits_field5 = 0
-        self.user_bits_field6 = 0
-        self.user_bits_field7 = 0
-        self.user_bits_field8 = 0
-        
-        if user_bits:
-            self.set_user_bits(user_bits)
-        
-        
-    def set_user_bits(self, user_bits):
-        """
-        ユーザービットデータを設定
-        
-        Parameters:
-        -----------
-        user_bits : dict
-            ユーザービットデータ
-        """
-        if 'groups' in user_bits:
-            if not isinstance(user_bits['groups'], list) or len(user_bits['groups']) != 4:
-                raise ValueError("groupsは4つの整数のリストである必要があります")
-            for i, value in enumerate(user_bits['groups']):
-                if not 0 <= value <= 255:
-                    raise ValueError(f"グループ{i+1}の値は0-255の範囲である必要があります")
-            self.user_bits['groups'] = user_bits['groups']
-            
-        if 'binary_groups' in user_bits:
-            if not isinstance(user_bits['binary_groups'], list) or len(user_bits['binary_groups']) != 8:
-                raise ValueError("binary_groupsは8つのバイナリ値のリストである必要があります")
-            for i, value in enumerate(user_bits['binary_groups']):
-                if value not in [0, 1]:
-                    raise ValueError(f"バイナリグループ{i+1}の値は0または1である必要があります")
-            self.user_bits['binary_groups'] = user_bits['binary_groups']
-            
-        if 'date' in user_bits:
-            # 日付をBCD形式に変換
-            try:
-                date = datetime.strptime(user_bits['date'], '%Y-%m-%d')
-                month_tens = date.month // 10
-                month_units = date.month % 10
-                day_tens = date.day // 10
-                day_units = date.day % 10
-                
-                self.user_bits['groups'][0] = (month_tens << 4) | month_units
-                self.user_bits['groups'][1] = (day_tens << 4) | day_units
-                self.user_bits['date'] = user_bits['date']
-            except ValueError:
-                raise ValueError("dateは'YYYY-MM-DD'形式である必要があります")
-                
-        if 'timezone' in user_bits:
-            # タイムゾーンを±HH形式に変換
-            try:
-                tz = user_bits['timezone'].upper()
-                if not tz.startswith(('UTC+', 'UTC-')):
-                    raise ValueError
-                hours = int(tz[4:])
-                if not 0 <= hours <= 23:
-                    raise ValueError
-                sign = 1 if tz[3] == '+' else 0
-                self.user_bits['groups'][2] = (sign << 7) | hours
-                self.user_bits['timezone'] = user_bits['timezone']
-            except ValueError:
-                raise ValueError("timezoneは'UTC+HH'または'UTC-HH'形式である必要があります")
-                
+        self.user_bits_field1 = user_bits_field[0]
+        self.user_bits_field2 = user_bits_field[1]
+        self.user_bits_field3 = user_bits_field[2]
+        self.user_bits_field4 = user_bits_field[3]
+        self.user_bits_field5 = user_bits_field[4]
+        self.user_bits_field6 = user_bits_field[5]
+        self.user_bits_field7 = user_bits_field[6]
+        self.user_bits_field8 = user_bits_field[7]
+
     
     def _timecode_to_binary_for_60fps(self, hours, minutes, seconds, frames):
         """
@@ -538,49 +463,22 @@ def main():
     parser.add_argument('--current-time', action='store_true', help='現在の時刻を使用')
     
     # ユーザービット関連の引数を追加
-    parser.add_argument('--date', type=str, help='日付（YYYY-MM-DD形式）')
-    parser.add_argument('--timezone', type=str, help='タイムゾーン（UTC+HH形式）')
-    parser.add_argument('--reel', type=int, help='リール番号（0-99）')
-    parser.add_argument('--camera', type=str, help='カメラID（最大4文字）')
-    parser.add_argument('--user-group1', type=int, help='ユーザーグループ1（0-255）')
-    parser.add_argument('--user-group2', type=int, help='ユーザーグループ2（0-255）')
-    parser.add_argument('--user-group3', type=int, help='ユーザーグループ3（0-255）')
-    parser.add_argument('--user-group4', type=int, help='ユーザーグループ4（0-255）')
     parser.add_argument('--user-bits-field1', type=int, help='ユーザービットフィールド1（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field2', type=int, help='ユーザービットフィールド2（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field3', type=int, help='ユーザービットフィールド3（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field4', type=int, help='ユーザービットフィールド4（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field5', type=int, help='ユーザービットフィールド5（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field6', type=int, help='ユーザービットフィールド6（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field7', type=int, help='ユーザービットフィールド7（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field8', type=int, help='ユーザービットフィールド8（4ビット: 0-15）')
     
     args = parser.parse_args()
-    
-    # ユーザービットデータの設定
-    user_bits = {}
-    if args.date:
-        user_bits['date'] = args.date
-    if args.timezone:
-        user_bits['timezone'] = args.timezone
-    if args.reel is not None:
-        user_bits['reel_number'] = args.reel
-    if args.camera:
-        user_bits['camera_id'] = args.camera
-    
-    # カスタムユーザーグループの設定
-    groups = [0, 0, 0, 0]
-    if args.user_group1 is not None:
-        groups[0] = args.user_group1
-    if args.user_group2 is not None:
-        groups[1] = args.user_group2
-    if args.user_group3 is not None:
-        groups[2] = args.user_group3
-    if args.user_group4 is not None:
-        groups[3] = args.user_group4
-    
-    if any(g != 0 for g in groups):
-        user_bits['groups'] = groups
     
     # LTCジェネレーターを初期化
     ltc_gen = LTCGenerator(
         fps=args.fps,
         sample_rate=args.sample_rate,
-        user_bits=user_bits if user_bits else None,
-        user_bits_field1=args.user_bits_field1
+        user_bits_field=[args.user_bits_field1, args.user_bits_field2, args.user_bits_field3, args.user_bits_field4, args.user_bits_field5, args.user_bits_field6, args.user_bits_field7, args.user_bits_field8]
     )
     
     # 現在の時刻を使用する場合
