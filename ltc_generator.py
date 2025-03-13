@@ -463,14 +463,14 @@ def main():
     parser.add_argument('--current-time', action='store_true', help='現在の時刻を使用')
     
     # ユーザービット関連の引数を追加
-    parser.add_argument('--user-bits-field1', type=int, help='ユーザービットフィールド1（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field2', type=int, help='ユーザービットフィールド2（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field3', type=int, help='ユーザービットフィールド3（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field4', type=int, help='ユーザービットフィールド4（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field5', type=int, help='ユーザービットフィールド5（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field6', type=int, help='ユーザービットフィールド6（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field7', type=int, help='ユーザービットフィールド7（4ビット: 0-15）')
-    parser.add_argument('--user-bits-field8', type=int, help='ユーザービットフィールド8（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field1', type=int, default=0, help='ユーザービットフィールド1（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field2', type=int, default=0, help='ユーザービットフィールド2（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field3', type=int, default=0, help='ユーザービットフィールド3（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field4', type=int, default=0, help='ユーザービットフィールド4（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field5', type=int, default=0, help='ユーザービットフィールド5（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field6', type=int, default=0, help='ユーザービットフィールド6（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field7', type=int, default=0, help='ユーザービットフィールド7（4ビット: 0-15）')
+    parser.add_argument('--user-bits-field8', type=int, default=0, help='ユーザービットフィールド8（4ビット: 0-15）')
     
     args = parser.parse_args()
     
